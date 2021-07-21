@@ -1,0 +1,32 @@
+tkr是一个富文本格式，1、可用TinGroup将*.tin文件转为*.tkr文件；2、可用任意tkinter的Text类经过内容解析生成*.tkr文件。
+
+tkr格式基于tkinter开发，是开源的格式。
+
+tkr深层上基于dump格式以及tag_config的格式化设置输出。
+
+当前版本：1
+
+当前允许的内容标记：text
+
+==========格式==========
+=tagon=
+tag_name {...}
+...
+=tagoff=
+=texton=
+[(...),...]
+=textoff=
+==========格式说明==========
+tagon/tagoff（样式定义）中的内容：
+%tagname% {tag_key:tag_value,...}
+：：%tagname%中不含空格，与字典之间只能有一个空格。字典为json格式。
+：：字典中的键-值与Text的tag_config(%tagname%)返回值类似，键取其中的键，但值只取值的第五个元素
+：：各个样式定义之间无所谓多少个空行
+：：tagon/tagoff标记与内容之间无所谓多少个空行
+
+texton/textoff（内容渲染）中的内容：
+[(mark,main,insert),...]
+：：直接从Text的dump返回值获取该列表
+：：该内容只允许一行
+：：texton/textoff标记与内容不能有空行
+====================
