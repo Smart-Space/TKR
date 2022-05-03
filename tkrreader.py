@@ -3,8 +3,61 @@ import tkinter.ttk as ttk
 from tkinter.scrolledtext import ScrolledText
 from tkinter.filedialog import askopenfilename,asksaveasfilename
 import re
+from PIL import Image,ImageTk,Image,ImageGrab
+import ctypes
 
 tkr_ver=1
+
+class Text2PDF:
+    '''将tkinter文本组件内容从图片转为pdf'''
+
+    def __init__(self,text_widget,master):
+        #text_widget::tkinter的文本框组件
+        #master::tkinter文本框所在的窗口
+        self.text=text_widget
+        self.master=master
+        self.retop=self.master.attributes('-topmost')
+        self.textstyle=self.text['relief']
+
+    def pdf(self,pdfname='textpdf',path=''):
+        #pdfname::pdf文件名称
+        #path::生成的pdf路径，默认当前目录
+        self.text.yview('moveto',0.0)
+        self.text.update()
+        _,ys,_,ye=self.text.bbox(1.0)
+        chh=ye-ys#获取单字符高度
+        startx=self.text.winfo_rootx()
+        starty=self.text.winfo_rooty()
+        width=self.text.winfo_width()
+        height=self.text.winfo_height()
+        #填充最后一页字符
+        num=height//chh+1
+        self.text.insert('end','\n'*num)
+        #开始截屏
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        endx=startx+width
+        endy=starty+height
+        self.master.attributes('-topmost',1)
+        self.text['relief']='flat'
+        imgs=[]
+        all_height=0
+        while True:
+            img=ImageGrab.grab((startx,starty,endx,endy))
+            imgs.append(img)
+            if self.text.yview()[1]>=1:
+                break
+            self.text.yview("scroll",height,'pixels')
+            self.text.update()
+            all_height+=height
+        pdfimg=Image.new('RGB',(width,all_height),255)
+        x=y=0#拼接起始点
+        for img in imgs:
+            pdfimg.paste(img,(x,y))
+            y+=height
+        pdfimg.save(path+pdfname+'.pdf',resolution=100.0)
+        self.master.attributes('-topmost',int(self.retop))
+        self.text['relief']=self.textstyle
+
 
 def open_file():
     _f=askopenfilename(title='打开tkr文件',filetype=[('tkinter富文本文件','*.tkr')],initialdir='G:/')
@@ -21,6 +74,13 @@ def save_as():
         return
     fname=_f+'.tkr'
     text2tkr(text,fname)
+
+def save_pdf():
+    _f=asksaveasfilename(title='选择tkr文件生成位置',filetype=[('tkinter富文本文件','*.pdf')])
+    if _f=='':
+        return
+    fname=_f+'.tkr'
+    Text2PDF(text,root).pdf(fname)
 
 #渲染部分
 def render(tkrt:tk.Text,tkr:str):
@@ -82,7 +142,8 @@ menubar = tk.Menu(root,font="TkMenuFont")
 root.configure(menu = menubar)
 
 menubar.add_command(label="文件",command=open_file)
-menubar.add_command(label='另存为',command=save_as)
+menubar.add_command(label='另存为tkr',command=save_as)
+menubar.add_command(label='另存为pdf',command=save_pdf)
 
 text = ScrolledText(root,font=('微软雅黑',13))
 text.place(relx=0.15, rely=0.0, relheight=0.999, relwidth=0.687)
